@@ -17,10 +17,11 @@ resource "azurerm_resource_group" "resource_live" {
 }
 
 resource "azurerm_kubernetes_cluster" "aks_labs" {
-  name                = "example-aks1"
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
-  dns_prefix          = "exampleaks1"
+  name                = "aks"
+  location            = azurerm_resource_group.resource_live.location
+  resource_group_name = azurerm_resource_group.resource_live.name
+  dns_prefix          = "labs"
+  kubernetes_version  = "1.24.0"
 
   default_node_pool {
     name       = "default"
@@ -37,9 +38,9 @@ resource "azurerm_kubernetes_cluster" "aks_labs" {
 }
 
 resource "azurerm_container_registry" "acr" {
-  name                = "labsacr"
-  resource_group_name = azurerm_resource_group.example.name
-  location            = azurerm_resource_group.example.location
+  name                = "studieslabsacr"
+  resource_group_name = azurerm_resource_group.resource_live.name
+  location            = azurerm_resource_group.resource_live.location
   sku                 = "Premium"
   admin_enabled       = false
 }
@@ -47,6 +48,7 @@ resource "azurerm_container_registry" "acr" {
 
 resource "azurerm_role_assignment" "acr_role" {
   scope                = data.azurerm_subscription.primary.id
-  role_definition_name = "Reader"
-  principal_id         = data.azurerm_client_config.example.object_id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_kubernetes_cluster.aks_labs.kubelete_identity[0].object
+  skip_service_principal_aad_check = true
 }
